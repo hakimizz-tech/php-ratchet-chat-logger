@@ -1,8 +1,9 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/tailwindlabs/tailwindcss/master/.github/logo-light.svg" alt="Tailwind CSS" width="200"/>
   <img src="https://www.docker.com/wp-content/uploads/2022/03/Moby-logo.png" alt="Docker" width="200"/>
-  <img src="https://kubernetes.io/images/kubernetes-logo-color.png" alt="Kubernetes" width="200"/>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/3/39/Kubernetes_logo_without_workmark.svg" alt="Kubernetes" width="200"/>
 </p>
+
 
 # Professional Real-Time Chat Logger
 
