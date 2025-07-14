@@ -1,8 +1,47 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/tailwindlabs/tailwindcss/master/.github/logo-light.svg" alt="Tailwind CSS" width="200"/>
+  <img src="https://www.docker.com/wp-content/uploads/2022/03/Moby-logo.png" alt="Docker" width="200"/>
+  <img src="https://kubernetes.io/images/kubernetes-logo-color.png" alt="Kubernetes" width="200"/>
+</p>
+
 # Professional Real-Time Chat Logger
 
 This project is a real-time, browser-based chat application with a persistent logging backend. It serves as a demonstration of a modern, robust PHP architecture, refactored from a fragile, low-level implementation to a professional, stable, and scalable solution using industry-standard tools.
 
 The application features a sleek, responsive frontend built with Tailwind CSS and a powerful, asynchronous WebSocket backend powered by the **Ratchet** library.
+
+## Enhanced Security with OTP and JWT
+
+To ensure a secure and authenticated user experience, the application implements a two-step authentication flow using One-Time Passwords (OTPs) and JSON Web Tokens (JWTs).
+
+1.  **Initial Request (Signup/Login):** The user provides their email. The backend generates a unique, short-lived OTP and sends it to the user's email address.
+2.  **Verification:** The user enters the OTP they received. The backend verifies that the OTP is correct and has not expired.
+3.  **Token Issuance:** Upon successful verification, the server generates a secure JWT. This token is sent to the client and stored in `localStorage`.
+4.  **Authenticated Communication:** For all subsequent requests (e.g., sending a message), the client includes the JWT. The server validates the token on every incoming message to ensure the user is authenticated, creating a stateless and secure session.
+
+This process prevents unauthorized access and ensures that only verified users can participate in the chat.
+
+### Authentication Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant Client as Browser (auth.html)
+    participant Server as Backend (Chat.php)
+    participant EmailService as Email Service
+
+    Client->>Server: Sends Signup/Login request with Email
+    Server->>EmailService: Triggers OTP email to user
+    EmailService-->>Client: Delivers OTP
+    Client->>Server: Submits Email and OTP
+    Server->>Server: Verifies OTP
+    alt OTP is Valid
+        Server->>Client: Issues JWT (JSON Web Token)
+        Client->>Client: Stores JWT in localStorage
+        Client->>Client: Redirects to Chat (index.html)
+    else OTP is Invalid
+        Server-->>Client: Shows error message
+    end
+```
 
 ## 1. The Challenge: From Fragile to Robust
 
@@ -62,7 +101,7 @@ The refactoring introduced a clean, standard project structure that separates co
 └── ...
 ```
 
-### The Brain: `src/Chat.php`
+### The Brain: `app/src/Chat.php`
 
 This class is the heart of our application. It implements Ratchet's `MessageComponentInterface`, which is a contract that guarantees our class will respond to the core WebSocket events.
 
@@ -80,7 +119,7 @@ class Chat implements MessageComponentInterface {
 
     public function __construct() {
         $this->clients = new \SplObjectStorage;
-        echo "Chat server started...\\n";
+        echo "Chat server started...\n";
     }
 
     // Called when a new user connects
@@ -110,7 +149,7 @@ class Chat implements MessageComponentInterface {
 }
 ```
 
-### The Engine: `bin/server.php`
+### The Engine: `app/bin/server.php`
 
 This is the simple entry point script that we execute from the command line. Its job is to configure and run the server. It wires together the components provided by Ratchet and tells it to use our `Chat` class to handle the logic.
 

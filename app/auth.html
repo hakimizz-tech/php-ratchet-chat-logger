@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatApp - Authentication</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .transition-transform {
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        }
+        .hidden-form {
+            transform: translateX(-100%);
+            opacity: 0;
+            position: absolute;
+        }
+        .visible-form {
+            transform: translateX(0);
+            opacity: 1;
+            position: relative;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="w-full max-w-md">
+        <div id="auth-container" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <!-- Signup Form -->
+            <div id="signup-form" class="visible-form">
+                <h2 class="text-2xl font-bold mb-6 text-center">Create Account</h2>
+                <form onsubmit="return handleSignup(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="firstname">
+                            First Name
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="firstname" type="text" placeholder="First Name" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="lastname">
+                            Last Name
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="lastname" type="text" placeholder="Last Name" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="email-signup">
+                            Email
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="email-signup" type="email" placeholder="Email" required>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Sign Up
+                        </button>
+                        <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800" href="#" onclick="showLoginForm()">
+                            Already have an account?
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form" class="hidden-form">
+                <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+                <form onsubmit="return handleLogin(event)">
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="email-login">
+                            Email
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="email-login" type="email" placeholder="Email" required>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Login
+                        </button>
+                        <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800" href="#" onclick="showSignupForm()">
+                            Create an account
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- OTP Form -->
+            <div id="otp-form" class="hidden-form">
+                <h2 class="text-2xl font-bold mb-6 text-center">Enter OTP</h2>
+                <p class="text-center mb-4">An OTP has been sent to your email.</p>
+                <form onsubmit="return handleOtp(event)">
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="otp">
+                            OTP
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="otp" type="text" placeholder="One-Time Password" required>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Verify
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8081');
+        let userEmail = '';
+
+        ws.onopen = () => {
+            console.log('Connected to the server');
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'login_request_sent') {
+                showOtpForm();
+            } else if (data.type === 'login_success') {
+                localStorage.setItem('jwt', data.token);
+                window.location.href = 'index.html';
+            } else if (data.type === 'login_failed') {
+                alert('Login failed. Please try again.');
+            }
+        };
+
+        function showSignupForm() {
+            document.getElementById('login-form').classList.replace('visible-form', 'hidden-form');
+            document.getElementById('signup-form').classList.replace('hidden-form', 'visible-form');
+        }
+
+        function showLoginForm() {
+            document.getElementById('signup-form').classList.replace('visible-form', 'hidden-form');
+            document.getElementById('login-form').classList.replace('hidden-form', 'visible-form');
+        }
+
+        function showOtpForm() {
+            const signupForm = document.getElementById('signup-form');
+            const loginForm = document.getElementById('login-form');
+            
+            if (signupForm.classList.contains('visible-form')) {
+                signupForm.classList.replace('visible-form', 'hidden-form');
+            }
+            if (loginForm.classList.contains('visible-form')) {
+                loginForm.classList.replace('visible-form', 'hidden-form');
+            }
+            
+            document.getElementById('otp-form').classList.replace('hidden-form', 'visible-form');
+        }
+
+        function handleSignup(event) {
+            event.preventDefault();
+            if (ws.readyState !== WebSocket.OPEN) {
+                console.error('WebSocket is not connected.');
+                return false;
+            }
+            const firstname = document.getElementById('firstname').value;
+            const lastname = document.getElementById('lastname').value;
+            userEmail = document.getElementById('email-signup').value;
+            ws.send(JSON.stringify({
+                type: 'signup',
+                firstname: firstname,
+                lastname: lastname,
+                email: userEmail
+            }));
+            return false;
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            if (ws.readyState !== WebSocket.OPEN) {
+                console.error('WebSocket is not connected.');
+                return false;
+            }
+            userEmail = document.getElementById('email-login').value;
+            ws.send(JSON.stringify({
+                type: 'request_login',
+                email: userEmail
+            }));
+            return false;
+        }
+
+        function handleOtp(event) {
+            event.preventDefault();
+            if (ws.readyState !== WebSocket.OPEN) {
+                console.error('WebSocket is not connected.');
+                return false;
+            }
+            const otp = document.getElementById('otp').value;
+            ws.send(JSON.stringify({
+                type: 'verify_login',
+                email: userEmail,
+                otp: otp
+            }));
+            return false;
+        }
+    </script>
+</body>
+</html>

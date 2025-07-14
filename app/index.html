@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-1/4 bg-white border-r p-4 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Online Users</h2>
+                <button id="logout-btn" class="p-2 rounded-full hover:bg-gray-200" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </div>
+            <ul id="user-list" class="flex-grow">
+                <!-- User list will be populated here -->
+            </ul>
+            <h3 class="text-lg font-semibold mt-4 mb-2">Quick Messages</h3>
+            <div id="quick-messages" class="space-y-2">
+                <button class="quick-msg-btn w-full text-left p-2 rounded-lg bg-gray-200 hover:bg-gray-300">Hello! 👋</button>
+                <button class="quick-msg-btn w-full text-left p-2 rounded-lg bg-gray-200 hover:bg-gray-300">How are you?</button>
+                <button class="quick-msg-btn w-full text-left p-2 rounded-lg bg-gray-200 hover:bg-gray-300">On my way.</button>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Message Display -->
+            <div id="messages" class="flex-1 p-4 overflow-y-auto bg-gray-50">
+                <!-- Messages will be populated here -->
+            </div>
+
+            <!-- Message Input -->
+            <div class="bg-white border-t p-4">
+                <div class="flex items-center">
+                    <input type="text" id="message-input" class="flex-1 border rounded-full py-2 px-4 mr-2" placeholder="Type a message...">
+                    <button id="send-btn" class="bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const jwt = localStorage.getItem('jwt');
+            if (!jwt) {
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            const ws = new WebSocket('ws://localhost:8081');
+            const messagesContainer = document.getElementById('messages');
+            const messageInput = document.getElementById('message-input');
+            const sendBtn = document.getElementById('send-btn');
+            const userList = document.getElementById('user-list');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            ws.onopen = () => {
+                console.log('Connected to the server.');
+                ws.send(JSON.stringify({ type: 'auth', token: jwt }));
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                switch (data.type) {
+                    case 'message':
+                        appendMessage(data);
+                        break;
+                    case 'user_list_update':
+                        updateUserList(data.users);
+                        break;
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('Disconnected from the server.');
+                appendMessage({ sender_name: 'System', message: 'Connection lost. Please refresh.', timestamp: new Date().toLocaleTimeString() });
+            };
+
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message) {
+                    ws.send(JSON.stringify({ type: 'message', message: message }));
+                    messageInput.value = '';
+                }
+            }
+
+            function appendMessage({ sender_name, message, timestamp }) {
+                const msgDiv = document.createElement('div');
+                msgDiv.classList.add('mb-2');
+                msgDiv.innerHTML = `<p><span class="font-bold">${sender_name}</span> <span class="text-gray-500 text-xs">${timestamp}</span></p><p class="text-gray-800">${message}</p>`;
+                messagesContainer.appendChild(msgDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            function updateUserList(users) {
+                userList.innerHTML = '';
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = user.name;
+                    li.classList.add('p-2', 'text-gray-700');
+                    userList.appendChild(li);
+                });
+            }
+
+            function logout() {
+                localStorage.removeItem('jwt');
+                window.location.href = 'auth.html';
+            }
+
+            sendBtn.addEventListener('click', sendMessage);
+            logoutBtn.addEventListener('click', logout);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            document.querySelectorAll('.quick-msg-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    messageInput.value = btn.textContent;
+                    sendMessage();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

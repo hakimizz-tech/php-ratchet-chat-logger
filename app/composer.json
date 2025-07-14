@@ -1,0 +1,17 @@
+{
+    "name": "hakeem/chatlogger",
+    "description": "A professional real-time chat logger application, refactored with Ratchet.",
+    "type": "project",
+    "require": {
+        "cboden/ratchet": "^0.4.4",
+        "firebase/php-jwt": "^6.3",
+        "ramsey/uuid": "^4.2",
+        "phpmailer/phpmailer": "^6.5",
+        "vlucas/phpdotenv": "^5.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "ChatApp\\": "src/"
+        }
+    }
+}
